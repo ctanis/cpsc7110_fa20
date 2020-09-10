@@ -1,0 +1,40 @@
+#+TITLE: Building Kokkos and running Kokkos-test
+
+
+* Get Kokkos source
+  : git clone git@github.com:kokkos/kokkos.git
+
+  
+* Configure a local installatio of Kokkos
+  Assumed paths:
+  - cloned Kokkos repository is in $KOKKOS_SRC
+  - a new empty build directory is kokkos-build
+  - the desired installation path for Kokkos is $INSTALL
+
+
+  On our system, make sure that cuda and gcc 8 are in your path:
+  : module load gnu8 cuda
+
+
+  From within ~kokkos-build~, configure and make a kokkos library.  Note that
+  this configuration enabled OpenMP and Cuda (Cuda will be the default):
+
+  : cmake3 $KOKKOS_SRC -DKokkos_ENABLE_OPENMP=On -DKokkos_ENABLE_CUDA=On \
+  :   -DKokkos_ENABLE_CUDA_LAMBDA=on
+  :   -DCMAKE_CXX_COMPILER=$KOKKOS_SRC/bin/nvcc_wrapper
+  :   -DCMAKE_INSTALL_PREFIX=$INSTALL
+
+  : make
+  : make install
+
+
+  
+* In this repository:
+
+  : cmake3 . -DKokkos_ROOT=$INSTALL
+  : make
+
+  Assumign this succeeds, you should be able to run kokkos_test
+
+      
+
