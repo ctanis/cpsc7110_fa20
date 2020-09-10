@@ -1,5 +1,8 @@
 #include <iostream>
+#include <iomanip>
+
 #include <Kokkos_Core.hpp>
+
 
 const long int SIZE=1000000;
 
@@ -24,7 +27,9 @@ int main(int argc, char *argv[])
             
 
         std::cout << "analytic sum: " << SIZE*(SIZE-1)/2 << std::endl;
-        std::cout << "kokkos reduction: " << global_sum << std::endl;
+        std::cout << "kokkos reduction: " <<
+            std::setprecision(std::numeric_limits<long double>::digits10 + 1) <<
+            global_sum << std::endl;
 
     }
     Kokkos::finalize();
