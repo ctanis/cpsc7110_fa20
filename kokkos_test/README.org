@@ -36,5 +36,19 @@
 
   Assumign this succeeds, you should be able to run kokkos_test
 
+:   qbert:kokkos_test$ make
+: [ 50%] Building CXX object CMakeFiles/kokkos_test.dir/kokkos_test.cpp.o
+: [100%] Linking CXX executable kokkos_test
+: [100%] Built target kokkos_test
+: qbert:kokkos_test$ ./kokkos_test
+: Kokkos::OpenMP::initialize WARNING: OMP_PROC_BIND environment variable not set
+:   In general, for best performance with OpenMP 4.0 or better set OMP_PROC_BIND=spread and OMP_PLACES=threads
+:   For best performance with OpenMP 3.1 set OMP_PROC_BIND=true
+:   For unit testing set OMP_PROC_BIND=false
+: This code will execute here: Cuda
+: analytic sum: 499999500000
+: kokkos reduction: 5e+11
+: qbert:kokkos_test$ 
+
       
 
