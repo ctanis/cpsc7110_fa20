@@ -34,7 +34,7 @@
   : cmake3 . -DKokkos_ROOT=$INSTALL
   : make
 
-  Assumign this succeeds, you should be able to run kokkos_test
+  Assuming this succeeds, you should be able to run kokkos_test
 
 :   qbert:kokkos_test$ make
 : [ 50%] Building CXX object CMakeFiles/kokkos_test.dir/kokkos_test.cpp.o
