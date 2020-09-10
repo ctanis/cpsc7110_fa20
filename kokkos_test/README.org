@@ -5,7 +5,7 @@
   : git clone git@github.com:kokkos/kokkos.git
 
   
-* Configure a local installatio of Kokkos
+* Configure a local installation of Kokkos
   Assumed paths:
   - cloned Kokkos repository is in $KOKKOS_SRC
   - a new empty build directory is kokkos-build
