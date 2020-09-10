@@ -1,4 +1,5 @@
-KOKKOS_PATH=/apps/kokkos
+# set KOKKOS_PATH=path-to-installation
+KOKKOS_PATH?=${HOME}/kokkos
 KOKKOS_DEVICES="Cuda"
 
 SRC=$(wildcard *.cpp)
