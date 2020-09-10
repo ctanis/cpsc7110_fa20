@@ -11,4 +11,4 @@ find_package(Kokkos)
 add_executable(kokkos-test kokkos_test.cpp)
 target_link_libraries(kokkos-test Kokkos::kokkos)
 
-SET( CMAKE_CXX_COMPILER ${KOKKOS_CXX_COMPILER} )
+SET( CMAKE_CXX_COMPILER "${Kokkos_CXX_COMPILER}" )
