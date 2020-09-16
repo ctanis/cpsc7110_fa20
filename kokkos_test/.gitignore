@@ -1,2 +1,3 @@
 kokkos_test
 Makefile
+*.json
