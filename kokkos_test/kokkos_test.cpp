@@ -24,12 +24,12 @@ int main(int argc, char *argv[])
 
         Kokkos::View<double*> data("my data", SIZE);
 
-        Kokkos::parallel_for(SIZE, KOKKOS_LAMBDA(const int i) {
+        Kokkos::parallel_for("init1", SIZE, KOKKOS_LAMBDA(const int i) {
                 data(i)=i;
             });
 
         double global_sum =0;
-        Kokkos::parallel_reduce(SIZE, KOKKOS_LAMBDA(const int i, double& sum) {
+        Kokkos::parallel_reduce("reduce1", SIZE, KOKKOS_LAMBDA(const int i, double& sum) {
                 sum += data(i);
             }, global_sum);
             
@@ -42,12 +42,12 @@ int main(int argc, char *argv[])
 #ifdef DO_DOT_PRODUCT
         Kokkos::View<double*> data2("my data", SIZE);
         double scale=10;
-        Kokkos::parallel_for(SIZE, KOKKOS_LAMBDA(const int i) {
+        Kokkos::parallel_for("init2", SIZE, KOKKOS_LAMBDA(const int i) {
                 data2(i)=scale;
             });
         
         double scaled_dot=0;
-        Kokkos::parallel_reduce(SIZE, KOKKOS_LAMBDA(const int i, double& dot) {
+        Kokkos::parallel_reduce("reduce2", SIZE, KOKKOS_LAMBDA(const int i, double& dot) {
                 // dot += data(i)*data2(i);
                 dot += fuse(data(i),data2(i));
             }, scaled_dot);
