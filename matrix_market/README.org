@@ -1,0 +1,67 @@
+* Sparse matrix/vector demo
+
+  This code loads a sparse matrix in MatrixMarket format (see the included
+  [[./tiny_matrix.mtx]] for a easy to read test case), reading in the entire
+  matrix on every rank for ease of implementation.
+
+  It proceeds to naively partition the matrix using a row-based partition, and
+  transforms the matrix into a local problem with dependencies on the other
+  ranks.  In this naive row-based partition, each rank *also* owns the vector
+  data corresponding to those same rows.  Thus matrix columns that correspond
+  to row indices that are not owned by the local process must use vector data
+  provided by other ranks.
+
+  After this local problem is determined, the global matrix is thrown away,
+  and all participating MPI ranks cooperate to figure out how they must
+  communicate to exchange vector data.
+
+  
+
+
+* Execution demonstration
+
+: bfw:matrix_market$ mpirun -np 2 mpi_demo tiny_matrix.mtx 
+: Hello from 0 of 2 on barfolomew.local
+: got sizes: 12, 12, 36
+: finished building map
+: owns rows 0 - 5 of 12
+: sending data requests:
+: rank 0 is me -- this should be 0: 0
+: rank 1 needs to send 3 to me
+: received data requests:
+: rank 0 is me -- this should be 0: 0
+: rank 1 needs 4 from me
+: final vectorB
+: i: 0
+: i: 1
+: i: 2
+: i: 3
+: i: 4
+: i: 5
+: ---- off-diagonals below ----
+: i: 11.001
+: i: 8.001
+: i: 7.001
+: bfw:matrix_market$ cat STDERR-1.out 
+: Hello from 1 of 2 on barfolomew.local
+: got sizes: 12, 12, 36
+: finished building map
+: owns rows 6 - 11 of 12
+: sending data requests:
+: rank 0 needs to send 4 to me
+: rank 1 is me -- this should be 0: 0
+: received data requests:
+: rank 0 needs 3 from me
+: rank 1 is me -- this should be 0: 0
+: final vectorB
+: i: 6.001
+: i: 7.001
+: i: 8.001
+: i: 9.001
+: i: 10.001
+: i: 11.001
+: ---- off-diagonals below ----
+: i: 0
+: i: 3
+: i: 2
+: i: 5
