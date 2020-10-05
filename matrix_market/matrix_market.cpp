@@ -103,6 +103,8 @@ void print_row(int row, const std::vector<int>& ia,
 }
 
 
+#ifdef TEST_MM_READER
+
 int main(int argc, char *argv[])
 {
     std::vector<int> ia, ja;
@@ -131,6 +133,7 @@ int main(int argc, char *argv[])
     
     return 0;
 }
+#endif
 
 
 // Local Variables:
