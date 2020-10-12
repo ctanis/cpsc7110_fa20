@@ -1,0 +1,218 @@
+#+title: MPI + Slurm
+#+LATEX_CLASS: article
+#+LATEX_HEADER: \usepackage[cm]{fullpage}\setlength{\parindent}{0pt}\setlength{\parskip}{10pt}
+#+LATEX_HEADER:\usepackage[labelformat=empty]{caption}
+#+OPTIONS: author:nil date:nil
+
+#+BEGIN_EXPORT LaTeX
+\thispagestyle{empty}
+#+END_EXPORT
+
+* Introduction
+
+  As you know, MPI is used to develop parallel programs that run on many
+  machines simultaneously.  In particular, the role of MPI is to provide
+  functionality for sending and receiving messages (both point-to-point and
+  collective) between the participating processes.  MPI can be used with no
+  special infrastructure, as long as the tools used to launch MPI programs can
+  access the machines on which the processes should execute (and assuming that
+  network connectivity for messages during execution remain functional).
+
+  Let us consider a simple MPI program:
+
+  #+begin_src C
+    #include <mpi.h>
+    #include <stdio.h>
+
+    int main(int argc, char *argv[])
+    {
+        MPI_Init(&argc, &argv);
+
+        int rank, np, len;
+        char name[MPI_MAX_PROCESSOR_NAME];
+
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        MPI_Comm_size(MPI_COMM_WORLD, &np);
+        MPI_Get_processor_name(name, &len);
+
+        printf("%5d/%d - %s\n", rank, np, name);
+    
+
+        MPI_Finalize();
+        return 0;
+    }
+  #+end_src
+
+  This program simply determines the rank and machine name of each launched
+  process.  On our system, we can compile and run it in a variety of ways:
+
+  : qbert:src$ mpicc -Wall -O3 hello.c -o hello
+  : qbert:src$ ./hello
+  :     0/1 - qbert
+  : qbert:src$
+  : qbert:src$ mpirun -np 4 ./hello
+  :     0/4 - qbert
+  :     2/4 - qbert
+  :     1/4 - qbert
+  :     3/4 - qbert
+
+  In this second case case we are running the program on 4 processes all on
+  the qbert head node.  The ~mpirun~ command has an optional ~-=machinefile~
+  argument for specifying a list of machines to include in the execution, and
+  this will work as long as it is possible ot ~rsh~ or ~ssh~ to the machines
+  listed.
+  
+* Slurm
+
+  In a normal cluster environment, however, it is not generally desirable to
+  allow arbitrary users to SSH directly to cluster nodes.  This is
+  particularly of issue on systems where demand for computational resources is
+  high, and policies dictate which users and projects should have execution
+  priority.
+
+  On these systems, a task scheduler is usually used to coordinate the
+  distributed execution of user programs.  One popular option for scheduler is
+  called Slurm -- this is in use on qbert.
+
+  Slurm provides job queues for access to the managed cluster (Slurm
+  terminology refers to these queues as /partitions/.)   Interacting with
+  slurm can be done via the Linux command line.
+
+  The ~sinfo~ command shows us information about the available partitions:
+
+  : qbert:src$ sinfo
+  : PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST
+  : qbert*       up   infinite      9   idle qbert[01-08,12]
+
+  The default (and only) partition (called ~qbert~) consists of 9 nodes
+  (individual machines participating in the partition).
+
+  This use of ~sinfo~ shows that each node provides 16 cores:
+
+  : qbert:src$ sinfo --Node --long
+  : Mon Oct 12 17:04:17 2020
+  : NODELIST   NODES PARTITION       STATE CPUS    S:C:T MEMORY TMP_DISK WEIGHT AVAIL_FE REASON
+  : qbert01        1    qbert*        idle   16    2:8:1  32108        0      1   (null) none
+  : qbert02        1    qbert*        idle   16    2:8:1  32108        0      1   (null) none
+  : qbert03        1    qbert*        idle   16    2:8:1  32108        0      1   (null) none
+  : qbert04        1    qbert*        idle   16    2:8:1  32108        0      1   (null) none
+  : qbert05        1    qbert*        idle   16    2:8:1  32108        0      1   (null) none
+  : qbert06        1    qbert*        idle   16    2:8:1  32108        0      1   (null) none
+  : qbert07        1    qbert*        idle   16    2:8:1  32108        0      1   (null) none
+  : qbert08        1    qbert*        idle   16    2:8:1  32108        0      1   (null) none
+  : qbert12        1    qbert*        idle   16    2:8:1  32108        0      1   (null) none
+
+  To launch a job on this partition, we post a job submission script that
+  describes the desired runtime environment.
+
+  #+begin_src sh
+    #!/bin/bash
+
+    #SBATCH -J hello               # Job name
+    #SBATCH -o job.%j.out         # Name of stdout output file (%j expands to jobId)
+    #SBATCH -N 9                 # Total number of nodes requested
+    #SBATCH -n 144                 # Total number of mpi tasks requested
+    #SBATCH -t 01:30:00           # Run time (hh:mm:ss) - 1.5 hours
+
+    # Launch MPI-based executable
+    prun ./hello
+  #+end_src
+
+
+  Here's how this job can be submitted:
+
+  : qbert:src$ sbatch sub.sh
+  : Submitted batch job 97
+
+  Notice the assigned job id, 97.  This number is used to create the output
+  file mentioned in the submission script above.
+
+  :  qbert:src$ head job.97.out 
+  : /bin/bash: warning: setlocale: .....
+  : /bin/bash: warning: setlocale: .....
+  : [prun] Master compute host = qbert01
+  : [prun] Resource manager = slurm
+  : [prun] Launch cmd = mpirun ./hello (family=openmpi3)
+  :     3/144 - qbert01
+  :     5/144 - qbert01
+  :     1/144 - qbert01
+  :     8/144 - qbert01
+  :    12/144 - qbert01
+  : qbert:src$ tail job.97.out 
+  :    40/144 - qbert03
+  :   140/144 - qbert12
+  :    48/144 - qbert04
+  :    27/144 - qbert02
+  :    47/144 - qbert03
+  :   137/144 - qbert12
+  :    56/144 - qbert04
+  :    31/144 - qbert02
+  :    45/144 - qbert03
+  :   142/144 - qbert12
+
+  This shows that 144 processes are started, spread out over the available
+  compute nodes listed in ~sinfo~.
+
+  This program ended very quickly.  If you ever need to check on a running MPI
+  job, use the ~squeue~ command to view your job.  The ~scancel~ command can
+  be used to remove your job from the queue.
+  
+* A more interesting  program
+
+  The included ~pi.cpp~ code demonstrates a simple /weak scaling/ type problem
+  where the problem grows as the number of processes grows.
+
+  Try compiling and running this program, and then submit it to Slurm to run
+  on more processes.
+
+* Using salloc
+
+  One can use slurm to claim interactive access to compute nodes.  In this
+  example I will request 4 nodes and do a simple experiment involving them:
+
+  : qbert:src$ salloc -N 4
+  : salloc: Granted job allocation 100
+  : qbert:src$ env |grep SLURM
+  : SLURM_NODELIST=qbert[01-04]
+  : SLURM_JOB_NAME=bash
+  : SLURM_NODE_ALIASES=(null)
+  : SLURM_NNODES=4
+  : SLURM_JOBID=100
+  : SLURM_TASKS_PER_NODE=1(x4)
+  : SLURM_JOB_ID=100
+  : SLURM_SUBMIT_DIR=/home/ctanis/slurm_demo/src
+  : SLURM_JOB_NODELIST=qbert[01-04]
+  : SLURM_CLUSTER_NAME=cluster
+  : SLURM_JOB_CPUS_PER_NODE=1(x4)
+  : SLURM_SUBMIT_HOST=qbert
+  : SLURM_JOB_PARTITION=qbert
+  : SLURM_JOB_NUM_NODES=4
+  : qbert:src$ prun ./hello
+  : [prun] Master compute host = qbert
+  : [prun] Resource manager = slurm
+  : [prun] Launch cmd = mpirun ./hello (family=openmpi3)
+  :     1/4 - qbert02
+  :     2/4 - qbert03
+  :     3/4 - qbert04
+  :     0/4 - qbert01
+  : qbert:src$ exit
+  : exit
+  : salloc: Relinquishing job allocation 100
+
+  Notice how this assigns one process to each node, which would be convenient
+  for experimenting with heterogeneous parallelism -- using MPI to connect
+  processes on individual nodes, but using OpenMP to parallelize on-node.
+
+  *Interactive mode should be used sparingly on systems under heavy load, as
+  these jobs tend to take longer than those submitted via the batch mechanism.*
+
+  Slurm is a popular task scheduler for HPC clusters.  Many of the features
+  here have analogues in other scheduling environments.  Some partition/queue
+  configurations may not allow all of these operations.
+
+* Conclusion
+
+  Using these techniques you should be able to compile and run MPI programs
+  that use many processors!
+
+  
